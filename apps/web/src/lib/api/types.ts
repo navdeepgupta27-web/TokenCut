@@ -167,6 +167,22 @@ export interface ModelsResponse {
   warnings: string[];
 }
 
+export interface ProviderStatus {
+  available: boolean;
+  reason: string | null;
+  /** True when counting needs no network call and no credential. */
+  local: boolean;
+  /** True when the provider can supply per-token character offsets. */
+  offsets: boolean;
+}
+
+export interface HealthResponse {
+  status: "ok" | "degraded";
+  version: string;
+  providers: Record<string, ProviderStatus>;
+  cache: string;
+}
+
 export interface RuleInfo {
   id: string;
   name: string;

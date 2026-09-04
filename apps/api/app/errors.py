@@ -45,6 +45,18 @@ class TextTooLarge(APIError):
     http_status = 413  # int literal: the Starlette constant was renamed mid-4.x
 
 
+class Unauthorized(APIError):
+    """The shared internal token was missing or wrong.
+
+    Only ever raised when ``settings.api_internal_token`` is configured. It
+    exists because a publicly reachable backend is an open proxy to the
+    operator's provider quota otherwise.
+    """
+
+    code = "unauthorized"
+    http_status = status.HTTP_401_UNAUTHORIZED
+
+
 class RateLimited(APIError):
     code = "rate_limited"
     http_status = status.HTTP_429_TOO_MANY_REQUESTS

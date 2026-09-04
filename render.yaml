@@ -1,0 +1,79 @@
+# Render blueprint for the TokenCut API.
+#
+# Apply with: Render dashboard -> New -> Blueprint -> point at this repo.
+# The frontend is NOT here; it goes to Vercel (see docs/04-deployment.md).
+#
+# Why the API is not on Vercel: it is a long-running ASGI service whose startup
+# pre-warms tiktoken's multi-megabyte BPE tables and initialises a cache. On
+# serverless, that work repeats on every cold start and the in-process cache is
+# useless across invocations.
+
+services:
+  - type: web
+    name: tokencut-api
+    runtime: python
+    plan: free # see the sleep warning in docs/04-deployment.md
+    region: oregon
+    branch: main
+
+    # Render clones the whole repo, so `data/` at the repo root stays visible
+    # to app/config.py's REPO_ROOT resolution. Do not move the app without
+    # also setting PRICING_CATALOG_PATH / CALIBRATION_PATH.
+    rootDir: apps/api
+
+    buildCommand: |
+      pip install --upgrade pip
+      pip install -r requirements.txt
+      # Bake the BPE tables into the image. Without this, tiktoken downloads
+      # them on the FIRST REQUEST — a network dependency at the worst possible
+      # moment, and a hard failure if egress is restricted.
+      mkdir -p .tiktoken_cache
+      TIKTOKEN_CACHE_DIR=$PWD/.tiktoken_cache python -c "from app.services.tokenizer.openai_tiktoken import prewarm; prewarm()"
+
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+
+    healthCheckPath: /v1/health
+
+    envVars:
+      - key: ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+
+      # Must list the real Vercel origin(s) or the browser blocks every
+      # request. This is the single most common cause of "works locally,
+      # fails deployed".
+      #
+      # Note: with the BFF proxy the browser never calls this service
+      # directly, so CORS is belt-and-braces rather than load-bearing — but
+      # set it correctly anyway in case anything is ever called directly.
+      - key: CORS_ORIGINS
+        sync: false # set in the dashboard, e.g. https://tokencut.vercel.app
+
+      # Point tiktoken at the tables baked in during build.
+      - key: TIKTOKEN_CACHE_DIR
+        value: /opt/render/project/src/apps/api/.tiktoken_cache
+
+      # Optional. Absent keys are not an error: the affected models report as
+      # unavailable and degrade to a labelled estimate.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+
+      # Shared secret checked by the BFF proxy's Authorization header. Set the
+      # SAME value in Vercel as API_INTERNAL_TOKEN. Without it, anyone who
+      # discovers this URL can spend your provider quota.
+      - key: API_INTERNAL_TOKEN
+        generateValue: true
+
+      # Optional Redis. Without it the service uses an in-process cache, which
+      # is correct for ONE instance and wrong the moment you scale out — each
+      # instance would keep its own cache and multiply upstream calls.
+      - key: REDIS_URL
+        sync: false
+
+      - key: RATE_LIMIT_PER_MINUTE
+        value: "60"
+      - key: MAX_TEXT_BYTES
+        value: "400000"

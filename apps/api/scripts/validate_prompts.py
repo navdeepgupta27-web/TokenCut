@@ -6,12 +6,20 @@ estimation.
 
 import json
 import urllib.request
+from typing import Any
 
 API = "http://127.0.0.1:8000/v1/analyze"
 MODELS = ["gpt-4o", "claude-opus-5"]
 
 
-def analyze(text, models=None, profile="balanced", tokens_out=400, calls=30000, overrides=None):
+def analyze(
+    text: str,
+    models: list[str] | None = None,
+    profile: str = "balanced",
+    tokens_out: int | None = 400,
+    calls: int = 30000,
+    overrides: dict[str, bool] | None = None,
+) -> dict[str, Any]:
     body = {
         "text": text,
         "models": models or MODELS,
@@ -35,7 +43,7 @@ def analyze(text, models=None, profile="balanced", tokens_out=400, calls=30000, 
 CASES = []
 
 
-def case(name, kind, text, **kw):
+def case(name: str, kind: str, text: str, **kw: Any) -> None:
     CASES.append((name, kind, text, kw))
 
 
@@ -197,7 +205,7 @@ case(
 )
 
 
-def run():
+def run() -> None:
     print("=" * 78)
     for kind_filter in ("short", "long"):
         print(f"\n{'#' * 78}\n#  {kind_filter.upper()} PROMPTS\n{'#' * 78}")
@@ -220,8 +228,15 @@ def run():
                   f"({tk['gpt-4o']['source']})")
             c = tk["claude-opus-5"]
             ca = tka["claude-opus-5"]
-            print(f"  claude-opus-5 {c['tokens']:>6} -> {ca['tokens']:<6} ({c['source']}"
-                  f"{', calibrated=' + str(c['calibrated']) if c['source'] == 'estimated' else ''})")
+            cal = (
+                f", calibrated={c['calibrated']}"
+                if c["source"] == "estimated"
+                else ""
+            )
+            print(
+                f"  claude-opus-5 {c['tokens']:>6} -> {ca['tokens']:<6} "
+                f"({c['source']}{cal})"
+            )
             print(f"  reduction     {pct:>5.1f}%")
 
             g = cost.get("gpt-4o", {})
@@ -240,7 +255,8 @@ def run():
             if o["suggested"]:
                 print("  suggested (not applied):")
                 for s in o["suggested"]:
-                    amt = "advice" if s["category"] == "advisory" else f"-{s['tokens_saved_if_applied']}"
+                    advisory = s["category"] == "advisory"
+                    amt = "advice" if advisory else f"-{s['tokens_saved_if_applied']}"
                     print(f"    - {s['rule_id']:<26} {amt:<7} x{s['occurrences']}")
 
             for w in o["warnings"]:

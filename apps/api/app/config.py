@@ -39,6 +39,17 @@ class Settings(BaseSettings):
     anthropic_api_key: str | None = None
     google_api_key: str | None = None
 
+    # ---- internal auth ---------------------------------------------------
+    # Shared secret required as `Authorization: Bearer <token>` on every
+    # endpoint except health and the schema. Unset (the local default) means
+    # no gate, so development stays trivially runnable.
+    #
+    # Set this in ANY public deployment. The browser never calls this service
+    # directly — the Next.js BFF adds the header — so requiring it costs
+    # nothing, and without it a discoverable URL is an open proxy to the
+    # operator's Anthropic and Google quota.
+    api_internal_token: str | None = None
+
     # ---- infra ----------------------------------------------------------
     redis_url: str | None = None
     cache_ttl_seconds: int = 86_400  # 24h; keys are content hashes, so this is safe

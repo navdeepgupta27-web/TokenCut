@@ -39,11 +39,25 @@ export function usePlayground(): {
     [state.text],
   );
 
-  // ---- tier 1: local counts, every keystroke -----------------------------
+  // ---- warm-up ------------------------------------------------------------
   useEffect(() => {
-    const tokenizer = getLocalTokenizer();
-    tokenizer.prewarm();
+    // Load the BPE table now, so the first keystroke is not the one that
+    // waits several megabytes for it.
+    getLocalTokenizer().prewarm();
+
+    // Wake a sleeping backend while the visitor is still reading. On a
+    // free-tier host a cold start can take tens of seconds, and paying that
+    // on the first analyse call is the worst possible moment for it.
+    // Fire-and-forget: the page is fully usable if this never resolves.
+    if (!initialState.localOnly) {
+      void fetch("/api/health", { method: "GET" }).catch(() => {
+        // A sleeping or absent backend is an expected state, not an error.
+        // Local OpenAI counts are unaffected either way.
+      });
+    }
   }, []);
+
+  // ---- tier 1: local counts, every keystroke -----------------------------
 
   useEffect(() => {
     if (oversized) return;

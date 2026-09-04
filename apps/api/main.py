@@ -18,9 +18,11 @@ import time
 import uuid
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from hmac import compare_digest
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
@@ -88,6 +90,50 @@ app.add_middleware(
     expose_headers=["X-Request-Id", "Retry-After"],
     max_age=86_400,
 )
+
+
+# Paths reachable without the internal token. Health must stay open for the
+# platform's own health check, and the schema is not sensitive.
+_OPEN_PATHS = frozenset({"/", "/health", f"{settings.api_prefix}/health", "/docs", "/openapi.json"})
+
+
+@app.middleware("http")
+async def require_internal_token(
+    request: Request, call_next: RequestResponseEndpoint
+) -> Response:
+    """Gate the API behind a shared secret, when one is configured.
+
+    No token configured (the local-development default) means no gate — the
+    service stays trivially runnable. But once deployed to a public URL, an
+    ungated backend is an open proxy to the operator's Anthropic and Google
+    quota, which someone will eventually find and drain.
+
+    The browser never talks to this service directly; the Next.js BFF adds the
+    header. So requiring it costs nothing in the real request path.
+    """
+    expected = settings.api_internal_token
+    if expected and request.url.path not in _OPEN_PATHS:
+        header = request.headers.get("authorization", "")
+        scheme, _, presented = header.partition(" ")
+        # compare_digest to avoid leaking the token through timing.
+        if scheme.lower() != "bearer" or not compare_digest(presented, expected):
+            request_id = request.headers.get("x-request-id") or uuid.uuid4().hex[:16]
+            log.warning(
+                "unauthorized_request",
+                extra={"request_id": request_id, "path": request.url.path},
+            )
+            return JSONResponse(
+                status_code=401,
+                content={
+                    "error": {
+                        "code": "unauthorized",
+                        "message": "Missing or invalid internal token.",
+                        "details": {},
+                        "request_id": request_id,
+                    }
+                },
+            )
+    return await call_next(request)
 
 
 @app.middleware("http")
