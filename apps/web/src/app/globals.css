@@ -1,0 +1,280 @@
+@import "tailwindcss";
+
+/* ==========================================================================
+   Design tokens
+   --------------------------------------------------------------------------
+   Three theme states, in this order of precedence:
+
+     1. :root[data-theme="dark"|"light"]   explicit user choice
+     2. @media (prefers-color-scheme)       OS preference  (the default state)
+     3. :root                               light baseline
+
+   Every colour gets its definition on bare :root first. A colour whose ONLY
+   definition lives inside a media query or an attribute selector is a colour
+   that disappears in some theme state.
+   ========================================================================== */
+
+@theme {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-stack), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --radius-card: 0.75rem;
+  --radius-control: 0.5rem;
+}
+
+:root {
+  color-scheme: light;
+
+  /* Font stacks are declared here, not injected by next/font, so the build has
+     no network dependency and the CSP needs no font host. Both fall through to
+     system faces when the named family is absent. Swap in next/font later by
+     overriding these two variables — nothing else needs to change. */
+  --font-inter: "Inter", "Inter var";
+  --font-mono-stack: "JetBrains Mono", "SFMono-Regular", "Cascadia Mono";
+
+  --bg: #fbfbfd;
+  --bg-raised: #ffffff;
+  --bg-sunken: #f2f3f7;
+  --bg-hover: #eceef4;
+
+  --border: #dfe2ea;
+  --border-strong: #c4c9d6;
+
+  --text: #14161c;
+  --text-muted: #5a6172;
+  --text-faint: #8b91a3;
+
+  --accent: #0d7d76;
+  --accent-hover: #0a655f;
+  --accent-fg: #ffffff;
+  --accent-subtle: #e2f4f2;
+
+  --positive: #0f7b45;
+  --positive-subtle: #e3f5ea;
+  --warning: #92600a;
+  --warning-subtle: #fdf3dc;
+  --danger: #b3261e;
+  --danger-subtle: #fce9e7;
+
+  /* Token map: four low-saturation shades cycled so adjacent tokens stay
+     distinguishable. Deliberately NOT a rainbow — a rainbow fails contrast
+     and reads as decoration rather than data. */
+  --tok-1: #dbe7f5;
+  --tok-2: #e3f0e6;
+  --tok-3: #f5e8db;
+  --tok-4: #eae1f2;
+  --tok-fg: #14161c;
+
+  --focus-ring: #0d7d76;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #0b0d11;
+    --bg-raised: #14171d;
+    --bg-sunken: #080a0d;
+    --bg-hover: #1d212a;
+
+    --border: #262b35;
+    --border-strong: #3a4150;
+
+    --text: #eef0f4;
+    --text-muted: #9aa2b1;
+    --text-faint: #6b7382;
+
+    --accent: #2dd4bf;
+    --accent-hover: #5eead4;
+    --accent-fg: #05201d;
+    --accent-subtle: #0f2e2b;
+
+    --positive: #4ade80;
+    --positive-subtle: #0e2a1a;
+    --warning: #fbbf24;
+    --warning-subtle: #2e2410;
+    --danger: #f87171;
+    --danger-subtle: #2e1414;
+
+    --tok-1: #1c2b3d;
+    --tok-2: #1b3025;
+    --tok-3: #33281a;
+    --tok-4: #2a2138;
+    --tok-fg: #eef0f4;
+
+    --focus-ring: #2dd4bf;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0b0d11;
+  --bg-raised: #14171d;
+  --bg-sunken: #080a0d;
+  --bg-hover: #1d212a;
+
+  --border: #262b35;
+  --border-strong: #3a4150;
+
+  --text: #eef0f4;
+  --text-muted: #9aa2b1;
+  --text-faint: #6b7382;
+
+  --accent: #2dd4bf;
+  --accent-hover: #5eead4;
+  --accent-fg: #05201d;
+  --accent-subtle: #0f2e2b;
+
+  --positive: #4ade80;
+  --positive-subtle: #0e2a1a;
+  --warning: #fbbf24;
+  --warning-subtle: #2e2410;
+  --danger: #f87171;
+  --danger-subtle: #2e1414;
+
+  --tok-1: #1c2b3d;
+  --tok-2: #1b3025;
+  --tok-3: #33281a;
+  --tok-4: #2a2138;
+  --tok-fg: #eef0f4;
+
+  --focus-ring: #2dd4bf;
+}
+
+/* Expose the tokens to Tailwind's utility generator. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-raised: var(--bg-raised);
+  --color-bg-sunken: var(--bg-sunken);
+  --color-bg-hover: var(--bg-hover);
+  --color-border-base: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-text-base: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-positive: var(--positive);
+  --color-positive-subtle: var(--positive-subtle);
+  --color-warning: var(--warning);
+  --color-warning-subtle: var(--warning-subtle);
+  --color-danger: var(--danger);
+  --color-danger-subtle: var(--danger-subtle);
+}
+
+/* ========================================================================== */
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  /* Explicit background: the page must not borrow a host's ground colour. */
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Numbers in the metrics bar change constantly. Tabular figures stop the
+   layout jittering on every keystroke. */
+.tnum {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   CodeMirror theming.
+   Scoped here rather than passed through EditorView.theme() so the editor
+   inherits the same tokens as the rest of the app and both themes stay in
+   one place.
+   ------------------------------------------------------------------------- */
+
+.cm-editor {
+  height: 100%;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.cm-editor.cm-focused {
+  outline: none;
+}
+
+.cm-editor .cm-scroller {
+  font-family: var(--font-mono);
+  padding: 1rem 0.25rem;
+}
+
+.cm-editor .cm-content {
+  caret-color: var(--accent);
+}
+
+.cm-editor .cm-cursor,
+.cm-editor .cm-dropCursor {
+  border-left-color: var(--accent);
+}
+
+.cm-editor .cm-placeholder {
+  color: var(--text-faint);
+  font-style: normal;
+}
+
+.cm-editor .cm-selectionBackground,
+.cm-editor.cm-focused .cm-selectionBackground,
+.cm-editor ::selection {
+  background: var(--accent-subtle) !important;
+}
+
+.cm-editor .cm-activeLine {
+  background: transparent;
+}
+
+/* Token map decorations: four cycled shades, applied only to the visible
+   viewport by CodeMirror's decoration system. */
+.tok-0 { background-color: var(--tok-1); color: var(--tok-fg); }
+.tok-1 { background-color: var(--tok-2); color: var(--tok-fg); }
+.tok-2 { background-color: var(--tok-3); color: var(--tok-fg); }
+.tok-3 { background-color: var(--tok-4); color: var(--tok-fg); }
+
+.tok-0, .tok-1, .tok-2, .tok-3 {
+  border-radius: 2px;
+  /* Negative margin + padding keeps the highlight visually snug without
+     changing the character advance, so offsets stay aligned. */
+  padding: 1px 0;
+}
+
+/* Suggestion highlights in the source pane: underline rather than fill, so
+   they compose with the token map instead of fighting it. */
+.suggest-span {
+  text-decoration: underline wavy var(--warning);
+  text-decoration-skip-ink: none;
+  text-underline-offset: 3px;
+}

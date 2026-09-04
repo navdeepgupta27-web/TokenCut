@@ -1,0 +1,38 @@
+# ---- secrets -------------------------------------------------------------
+# .env.example files ARE committed; anything real is not.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# ---- python --------------------------------------------------------------
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+requirements.lock.txt
+
+# ---- node / next ---------------------------------------------------------
+node_modules/
+.next/
+out/
+.turbo/
+next-env.d.ts
+*.tsbuildinfo
+
+# ---- tooling / editors ---------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# ---- local dev -----------------------------------------------------------
+# apps/web/.claude/launch.json IS committed: it is portable (npm run dev on a
+# fixed port) and tells anyone cloning how to start the dev server.

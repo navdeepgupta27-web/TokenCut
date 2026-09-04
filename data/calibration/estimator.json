@@ -1,0 +1,73 @@
+{
+  "schema_version": 2,
+  "_policy": [
+    "This file backs the instant '≈' numbers shown while the exact, debounced",
+    "API count is in flight. A family whose ratio is null produces NO estimate",
+    "— the UI shows '—', never a fabricated number.",
+    "",
+    "`calibrated: false` means the ratio is DERIVED from published statements,",
+    "not measured against the provider's own counting endpoint. The API",
+    "propagates this flag so the UI widens the error band and softens the",
+    "wording. Replace these with measured values by running:",
+    "",
+    "    python -m scripts.calibrate_estimator --model claude-opus-5",
+    "",
+    "which requires ANTHROPIC_API_KEY and writes measured ratios plus real",
+    "p50/p90 error bands back into this file."
+  ],
+  "base_encoding": "o200k_base",
+  "base_note": "Ratios multiply the tiktoken o200k_base count of the same text.",
+
+  "families": {
+    "anthropic_pre_4_7": {
+      "ratio": 1.18,
+      "calibrated": false,
+      "error_p50": null,
+      "error_p90": null,
+      "applies_to": [
+        "claude-sonnet-4-6",
+        "claude-opus-4-6",
+        "claude-sonnet-4-5",
+        "claude-haiku-4-5"
+      ],
+      "source": "Anthropic API reference (bundled claude-api skill): tiktoken undercounts Claude tokens by ~15-20% on typical text, and by more on code and non-English input. 1.18 is the midpoint of that stated range.",
+      "notes": "DERIVED, NOT MEASURED. Known to be worst on code and non-Latin scripts, where the true ratio is higher."
+    },
+
+    "anthropic_4_7_plus": {
+      "ratio": 1.53,
+      "calibrated": false,
+      "error_p50": null,
+      "error_p90": null,
+      "applies_to": [
+        "claude-opus-5",
+        "claude-sonnet-5",
+        "claude-fable-5",
+        "claude-opus-4-8",
+        "claude-opus-4-7"
+      ],
+      "source": "Derived from two published figures: (1) tiktoken undercounts the older Claude tokenizer by ~15-20% (midpoint 1.18) per the Anthropic API reference; (2) the official Anthropic pricing page states the Claude 4.7-and-later tokenizer 'produces approximately 30% more tokens for the same text' than the previous generation. 1.18 x 1.30 = 1.534.",
+      "notes": "DERIVED BY MULTIPLYING TWO PUBLISHED RANGES — the compounded uncertainty is wide, and this ratio has not been measured against count_tokens even once. It exists so the placeholder is not obviously wrong (a single 1.18 ratio would understate Opus 5 by roughly 30%), NOT because it is accurate. Calibrate before this figure is shown without a prominent caveat."
+    },
+
+    "google": {
+      "ratio": null,
+      "calibrated": false,
+      "error_p50": null,
+      "error_p90": null,
+      "applies_to": [],
+      "source": null,
+      "notes": "No sourced ratio available for any Gemini model. Deliberately null: Gemini shows no estimate at all until the debounced exact count lands. Showing '—' is correct; inventing a ratio is not."
+    }
+  },
+
+  "content_class_multipliers": {
+    "_notes": "Applied on top of the family ratio once fitted per class. All null until calibration runs.",
+    "prose": null,
+    "code": null,
+    "json": null,
+    "markdown": null,
+    "cjk": null,
+    "indic": null
+  }
+}

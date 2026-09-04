@@ -1,0 +1,35 @@
+[project]
+name = "tokencut-api"
+version = "0.1.0"
+description = "Token counting, prompt optimization and cost analysis across LLM providers"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+filterwarnings = [
+    "error::DeprecationWarning:app.*",
+    "error::DeprecationWarning:main",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ANN", "RUF"]
+ignore = [
+    "ANN401",  # Any is deliberate in the error-envelope kwargs
+    "B008",    # FastAPI Depends() in defaults is the framework idiom
+    # The ambiguous-unicode rules fight this codebase's whole purpose: the
+    # smart quotes, em dashes and non-breaking spaces in tier0._UNICODE_MAP are
+    # the feature, not a typo.
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    "UP042",   # (str, Enum) over StrEnum — the form pydantic examples use
+    "RUF023",  # __slots__ ordering is cosmetic
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN"]
